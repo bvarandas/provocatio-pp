@@ -80,10 +80,10 @@ else{
             .WithUrl(NavManager.ToAbsoluteUri("http://localhost:9010/hubs/brokerhub"))
             .Build();
 
-        hubConnection.On<HackNewsViewModel[]>("ReceiveMessageHN", (HackNewsViewModel[] data) =>
+        hubConnection.On<HackNewsViewModel>("ReceiveMessageHN", (HackNewsViewModel data) =>
         {
             var hachnewstemp = hacknews.ToList();
-            hachnewstemp.AddRange(data);
+            hachnewstemp.Add(data);
             hacknews = hachnewstemp.ToArray();
 
             InvokeAsync(StateHasChanged);
