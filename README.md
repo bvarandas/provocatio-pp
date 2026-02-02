@@ -1,4 +1,4 @@
-# ProvocatioPhi
+# Provocatio-pp
 
 
 Project proposed for a challenge.
@@ -18,6 +18,8 @@ It is an approach similar to the architecture we use in the capital markets for 
 Explaining the Technology Stack and Patterns:
 
 **Nginx** - Important for load balancing and reverse proxy in a DMZ environment. It can also manage and validate SignalR, WebSocket, and REST API connections, verifying whether the client is valid or not before reaching the backend environment. We do not perform identity controls; however, we can control it via JWT with a bearer. Important for controlling the number of requests made to the API, using the Round Robin algorithm to distribute requests among API instances, and also important for high availability and resilience to high request demand, using reverse proxy and API tonal configuration.
+
+**Blazor** - The front-end application was built in Blazor so we could view the news listing. Tech was chosen for its ease of use and ease of integration with SignalR.
 
 **Protobuf** -  For message compression during inter-service transport (Byte Array) - Important for message compression during transport and for better storage and sending via RabbitMQ.
 
