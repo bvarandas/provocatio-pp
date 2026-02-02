@@ -1,0 +1,108 @@
+﻿@page "/"
+@page "/HackNewsList"
+@inject HackNewsClient Client;
+@inject NavigationManager NavManager
+
+@using Microsoft.AspNetCore.SignalR.Client
+ @attribute [StreamRendering] 
+
+<PageTitle>Hack News</PageTitle>
+
+<div>
+    <form action="/HackNewsList" data-enhance>
+        <input type="number" name="numberRegisters" />
+        <input type="submit" value="Load registers" />
+    </form>
+</div>
+
+@if (hacknews is null)
+{
+    <p><em>Loading...</em></p>
+}
+else{
+    <table class="table table-striped table-bordered table-hover mt-3" >
+        <thead class="table-dark">
+            <th>Id</th>
+            <th >Title</th>
+            <th>By</th>
+            <th>Descendants</th>
+            <th class="text-end">Kids</th>
+            <th>Score</th>
+            <th>Url</th>
+            <th>Date</th>
+        </thead>
+        <tbody>
+            @foreach (var news in hacknews)
+            {
+                <tr>
+                    <td>@news.Id</td>
+                    <td style="width: 400px">@news.Title</td>
+                    <td>@news.By</td>
+                    <td class="text-end">@news.Descendants</td>
+                    <td>
+                        @if (news.Kids is not null)
+                        {
+                            @foreach (var kid in news.Kids)
+                            {
+                                <span>@kid,</span><br>
+                            }
+                        }
+                    </td>
+                    <td>@news.Score</td>
+                    <td style="width:200px" class="text-break">@news.Url</td>
+                    <td>@news.ToDate.ToString("dd-MM-yyyy") </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code
+{
+    private HubConnection? hubConnection;
+
+    private HackNewsViewModel[]? hacknews;
+
+    [SupplyParameterFromQuery]
+    private int? numberRegisters { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (numberRegisters.HasValue)
+        {
+            hacknews = await Client.GetHackNewsTakeAsync(numberRegisters.Value);
+        }else
+        {
+            hacknews = await Client.GetAllHackNewsAsync();
+        }
+
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavManager.ToAbsoluteUri("http://localhost:9010/hubs/brokerhub"))
+            .Build();
+
+        hubConnection.On<HackNewsViewModel[]>("ReceiveMessageHN", (HackNewsViewModel[] data) =>
+        {
+            var hachnewstemp = hacknews.ToList();
+            hachnewstemp.AddRange(data);
+            hacknews = hachnewstemp.ToArray();
+
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync().ContinueWith((h) =>
+        {
+            hubConnection.SendAsync("ConnectToMessageBroker");
+        });
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

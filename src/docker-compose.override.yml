@@ -1,0 +1,42 @@
+version: '3.4'
+
+services:
+  dragonflydb:
+    container_name: dragonflydb
+    command: "--proactor_threads 2 --snapshot_cron '*/5 * * * *'"
+    ulimits: 
+      memlock: -1
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks: [challenge]
+    volumes: 
+      - dragonflydata:/data
+  
+      
+  challenge.api:
+    container_name: challenge.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=80 
+    ports:
+      - "5200:80"
+    networks: [challenge]
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "9010:80"
+    #volumes:
+      #- ./nginx.conf:/etc/nginx/nginx.conf:ro
+      #- ./html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks: [challenge]
+
+volumes:
+  dragonflydata:
+  
+networks:
+    challenge:
+        driver: bridge

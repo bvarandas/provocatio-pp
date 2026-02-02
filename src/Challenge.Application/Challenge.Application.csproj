@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+ 
+  <ItemGroup>
+    <ProjectReference Include="..\Challenge.Domain\Challenge.Domain.csproj" />
+    <ProjectReference Include="..\Challenge.Infra.CrossCutting\Challenge.Infra.CrossCutting.csproj" />
+    <ProjectReference Include="..\Challenge.Infra\Challenge.Infra.csproj" />
+  </ItemGroup>
+
+</Project>

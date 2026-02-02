@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="wwwroot\js\firebase\**" />
+    <Content Remove="wwwroot\js\firebase\**" />
+    <EmbeddedResource Remove="wwwroot\js\firebase\**" />
+    <None Remove="wwwroot\js\firebase\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.23" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="config\" />
+    <Folder Include="docs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\js\firebase.js" />
+  </ItemGroup>
+
+</Project>
