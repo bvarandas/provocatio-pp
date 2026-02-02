@@ -361,3 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/src/Challenge.Front/Challenge.Front/config/challenge-phi-firebase-adminsdk-fbsvc-763fc8a69b.json
