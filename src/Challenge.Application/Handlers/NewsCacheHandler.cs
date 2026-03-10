@@ -1,32 +1,26 @@
 ﻿
 using Challenge.Application.Commands;
-using Challenge.Domain.Bus;
 using Challenge.Domain.Interfaces;
 using Challenge.Domain.Models;
-using Challenge.Domain.Notifications;
-using FluentResults;
-using MediatR;
+using Challenge.Domain.Models.Results;
+
 using Microsoft.Extensions.Logging;
 
 namespace Challenge.Application.Handlers;
 
-public class NewsCacheHandler : CommandHandler,
-    IRequestHandler<DeleteNewsCache, Result<bool>>,
-    IRequestHandler<InsertNewsCache, Result<bool>>
+public class NewsCacheHandler : CommandHandler, INewsCacheHandler
 {
     private readonly INewsCache _newsCache;
     private readonly ILogger<NewsCacheHandler> _logger;
     public NewsCacheHandler(
         INewsCache newsCache,
-        IMediatorHandler bus,
-        ILogger<NewsCacheHandler> logger,
-        INotificationHandler<DomainNotification> notifications) : base(bus, notifications)
+        ILogger<NewsCacheHandler> logger) : base()
     {
         _newsCache = newsCache;
         _logger = logger;
     }
 
-    public async Task<Result<bool>> Handle(DeleteNewsCache command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleRemove(DeleteNewsCache command, CancellationToken cancellationToken)
     {
         var news = new News() { Id = command.Id };
 
@@ -34,15 +28,16 @@ public class NewsCacheHandler : CommandHandler,
 
         if (!result.IsSuccess)
         {
-            _logger.LogError("error on insert hacker news on cache");
+            string error = "error on remove hacker news on cache";
+            _logger.LogError(error);
 
-            return await Task.FromResult(false);
+            return await Task.FromResult(Result<bool>.Fail(error));
         }
 
-        return await Task.FromResult(true);
+        return await Task.FromResult(Result<bool>.Ok(true));
     }
 
-    public async Task<Result<bool>> Handle(InsertNewsCache command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleUpsert(InsertNewsCache command, CancellationToken cancellationToken)
     {
         var news = new News(command.By, command.Descendants, command.Kids, command.Score, command.Title, command.Type, command.Type);
 
@@ -52,11 +47,13 @@ public class NewsCacheHandler : CommandHandler,
 
         if (!result.IsSuccess)
         {
-            _logger.LogError("error on insert hacker news on cache");
 
-            return await Task.FromResult(false);
+            string erro = "error on insert hacker news on cache";
+            _logger.LogError(erro);
+
+            return await Task.FromResult(Result<bool>.Fail(erro));
         }
 
-        return await Task.FromResult(true);
+        return await Task.FromResult(Result<bool>.Ok(true));
     }
 }

@@ -1,32 +1,19 @@
-﻿using Challenge.Domain.Bus;
-using Challenge.Domain.Notifications;
-using MediatR;
-namespace Challenge.Application.Handlers;
+﻿namespace Challenge.Application.Handlers;
 public class CommandHandler
 {
-    private readonly IMediatorHandler _mediator;
-    private readonly DomainNotificationHandler _notifications;
 
-    public CommandHandler(IMediatorHandler bus, INotificationHandler<DomainNotification> notifications)
+    public CommandHandler()
     {
-        _notifications = (DomainNotificationHandler)notifications;
-        _mediator = bus;
     }
 
-    protected void NotifyValidationErrors(Command message)
-    {
-        foreach (var error in message.ValidationResult.Errors)
-        {
-            _mediator.RaiseEvent(new DomainNotification(message.MessageType, error.ErrorMessage));
-        }
-    }
+
 
     public async Task<bool> Commit(CancellationToken cancelationToken)
     {
-        if (_notifications.HasNotifications()) return false;
+        //if (_notifications.HasNotifications()) return false;
         //if (await _uow.Commit(cancelationToken)) return true;
 
-        await _mediator.RaiseEvent(new DomainNotification("Commit", "We had a problem during saving your data."));
+        //await _mediator.RaiseEvent(new DomainNotification("Commit", "We had a problem during saving your data."));
         return false;
     }
 }

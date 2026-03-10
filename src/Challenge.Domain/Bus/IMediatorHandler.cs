@@ -1,4 +1,4 @@
-﻿using FluentResults;
+﻿using Challenge.Domain.Models.Results;
 
 namespace Challenge.Domain.Bus;
 

@@ -1,8 +1,6 @@
 version: '3.4'
 
 services:
-  dragonflydb:
-    image: docker.dragonflydb.io/dragonflydb/dragonfly
 
   challenge.api:
     image: ${DOCKER_REGISTRY-}challengeapi

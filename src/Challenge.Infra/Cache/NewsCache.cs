@@ -1,111 +1,70 @@
 ﻿using Challenge.Domain.Interfaces;
 using Challenge.Domain.Models;
-using FluentResults;
+using Challenge.Domain.Models.Results;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using StackExchange.Redis;
-using System.Text.Json;
+using System.Collections.Concurrent;
 
 namespace Challenge.Infra.Cache;
 
 public class NewsCache : INewsCache
 {
     private readonly ILogger<NewsCache> _logger;
-    private readonly ConnectionDragonflyDB _config;
-    private readonly ConnectionMultiplexer _dragonfly;
-    private readonly IDatabase _db;
-    private readonly int _database;
+    private static ConcurrentDictionary<int, News> _dicHackNews = null;
+    private static ConcurrentStack<int> _stackBestStories = null;
+    private static ConcurrentQueue<int> _queueBestStories = null;
 
-    private RedisKey keystories = new RedisKey("stories");
-    private RedisKey keynews = new RedisKey("news");
-
-    public NewsCache(IOptions<ConnectionDragonflyDB> config, ILogger<NewsCache> logger)
+    public NewsCache(ILogger<NewsCache> logger)
     {
         _logger = logger;
-        _config = config.Value;
-
-        _dragonfly = ConnectionMultiplexer.Connect(_config.ConnectionString, options =>
-        {
-            options.ReconnectRetryPolicy = new ExponentialRetry(5000, 1000 * 60);
-        });
-        _database = 1;
-        _db = _dragonfly.GetDatabase(_database);
+        _dicHackNews = new ConcurrentDictionary<int, News>();
+        _stackBestStories = new ConcurrentStack<int>();
+        _queueBestStories = new ConcurrentQueue<int>();
     }
-
 
     public async Task<Result<IEnumerable<int>>> GetAllBestStoriesAsync()
     {
-        var hash = new List<int>();
-
         var result = Enumerable.Empty<int>();
-
-        var valueKey = new RedisValue("list");
-
-        var hashEntry = await _db.HashGetAsync(keystories, valueKey);
-
-        if (hashEntry.HasValue)
-        {
-            var value = JsonSerializer.Deserialize<List<int>>(hashEntry.ToString());
-            hash.AddRange(value!);
-        }
-
-        result = hash;
-
-        return Result.Ok(result);
+        result = _stackBestStories
+            .ToList();
+        return Result<IEnumerable<int>>.Ok(result);
     }
 
     public async Task<Result<IEnumerable<News>>> GetAllNewsAsync()
     {
-        var hash = new List<News>();
-
         var result = Enumerable.Empty<News>();
 
-        var hashEntry = await _db.HashGetAllAsync(keynews);
+        result = _dicHackNews.Values.ToList()
+            .OrderByDescending(c => c.Score);
 
-        foreach (var item in hashEntry)
-        {
-            var value = JsonSerializer.Deserialize<News>(item.Value!);
-            hash.Add(value!);
-        }
-
-        result = hash;
-
-        return Result.Ok(result);
+        return Result<IEnumerable<News>>.Ok(result);
     }
 
     public async Task<Result<News>> GetNewsByIDAsync(int id)
     {
-        var hash = new News();
-
-        var hashEntry = await _db.HashGetAsync(keynews, new RedisValue(id.ToString()));
-
-        if (hashEntry.HasValue)
+        if (_dicHackNews.TryGetValue(id, out News hash))
         {
-            hash = JsonSerializer.Deserialize<News>(hashEntry.ToString());
+            return Result<News>.Ok(hash);
         }
 
-        return Result.Ok(hash);
+        return Result<News>.Ok(hash);
     }
 
     public async Task<Result> RemoveNewsAsync(News news)
     {
-        ITransaction transaction = _db.CreateTransaction();
-
         try
         {
-            RedisValue value = new RedisValue(news.Id.ToString());
-
-            _ = transaction.HashDeleteAsync(keynews, value);
-
-            bool committed = await transaction.ExecuteAsync();
-
-            _logger.LogInformation(committed ? "Hacker News removed with success cache" : "Issue on removed Hacker news cache");
+            if (_dicHackNews.TryRemove(news.Id, out News newsOld))
+            {
+                _logger.LogInformation("Hacker News removed with success cache");
+            }
+            else
+                _logger.LogInformation("Issue on removed Hacker news cache");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex.Message, ex);
 
-            return Result.Fail(new Error(ex.Message));
+            return Result.Fail(ex.Message);
         }
 
         return Result.Ok();
@@ -113,8 +72,12 @@ public class NewsCache : INewsCache
 
     public async Task<Result> UpsertBestStoriesAsync(List<int> litBestStories)
     {
-        RedisValue value = new RedisValue(JsonSerializer.Serialize(litBestStories));
-        await _db.HashSetAsync(keystories, new HashEntry[] { new HashEntry(new RedisValue("list"), value) });
+        litBestStories.ForEach(story =>
+        {
+            _stackBestStories.Push(story);
+            _queueBestStories.Enqueue(story);
+        });
+
         return Result.Ok();
     }
 
@@ -122,21 +85,15 @@ public class NewsCache : INewsCache
     {
         try
         {
-            ITransaction transaction = _db.CreateTransaction();
+            _dicHackNews.AddOrUpdate(news.Id, news, (key, oldValue) => news);
 
-            RedisValue value = new RedisValue(JsonSerializer.Serialize(news));
-
-            _ = transaction.HashSetAsync(keynews, new HashEntry[] { new HashEntry(new RedisValue(news.Id.ToString()), value) });
-
-            bool committed = await transaction.ExecuteAsync();
-
-            _logger.LogInformation(committed ? "News upserted with success cache" : "Issue on upsert news cache");
+            _logger.LogInformation("News upserted with success cache");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex.Message, ex);
 
-            return Result.Fail(new Error(ex.Message));
+            return Result.Fail(ex.Message);
         }
 
         return Result.Ok();

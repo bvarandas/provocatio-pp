@@ -1,17 +1,17 @@
 version: '3.4'
 
 services:
-  dragonflydb:
-    container_name: dragonflydb
-    command: "--proactor_threads 2 --snapshot_cron '*/5 * * * *'"
-    ulimits: 
-      memlock: -1
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    networks: [challenge]
-    volumes: 
-      - dragonflydata:/data
+  # dragonflydb:
+  #   container_name: dragonflydb
+  #   command: "--proactor_threads 2 --snapshot_cron '*/5 * * * *'"
+  #   ulimits: 
+  #     memlock: -1
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped
+  #   networks: [challenge]
+  #   volumes: 
+  #     - dragonflydata:/data
   
       
   challenge.api:

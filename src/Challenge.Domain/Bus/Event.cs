@@ -1,6 +1,5 @@
-﻿using MediatR;
-namespace Challenge.Domain.Bus;
-public abstract class Event : Message, INotification
+﻿namespace Challenge.Domain.Bus;
+public abstract class Event : Message
 {
     public DateTime Timestamp { get; private set; }
     protected Event()
